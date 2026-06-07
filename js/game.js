@@ -51,17 +51,22 @@ const VFX_SMOKE_ATLAS = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAswAAALFC
 // =================== DEV CONFIG ===================
 window.devConfig = {
     actionAnimMap: {
-        idle:    [0],
-        walk:    [1,2,3],
-        run:     [4,5,4],
-        jump:    [4,5],
-        duck:    [19],
-        dash:    [4,5,4],
-        punch:   [6,7,8,9],
-        kick:    [10,11,12,13],
-        special: [14,15,16,17],
-        hit:     [18],
-        block:   [19],
+        idle:       [0],
+        walk:       [1,2,3],
+        run:        [4,5,4],
+        jump:       [6,7],
+        duck:       [8],
+        block:      [9],
+        punch:      [10,11,12],
+        kick:       [13,14,15],
+        jump_kick:  [16,17],
+        duck_punch: [18,19],
+        special:    [20,21,22,23],
+        hit:        [24],
+        taunt:      [25,26,25],
+        win:        [25,26,25],
+        die:        [27,28,29],
+        dash:       [4,5,4],
     },
     inputBindings: {
         moveLeft:  { key:'A',   touch:'left'    },
@@ -87,34 +92,59 @@ const CHAR_DEFS = {
     midnight: { name:'MIDNIGHT MAULER', atlas:'c1', portrait:'teal_shirt',     tagline:'After-hours cleaner. Savage karate skills.',   hp:105, dmg:1.15, speed:0.95, color:0xaa44dd },
 };
 
-// Frame indices in atlas (0..5 = idle, walk_a, walk_b, punch, kick, special)
-// === ANIMATION FRAME CONSTANTS (20-frame atlas) ===
-// Layout: idle(1) | walk(3) | run(2) | punch(4) | kick(4) | special(4) | hit(1) | block(1)
-const FRAME_IDLE     = 0;
-const FRAME_WALK_A   = 1;
-const FRAME_WALK_B   = 2;
-const FRAME_WALK_C   = 3;
-const FRAME_RUN_A    = 4;
-const FRAME_RUN_B    = 5;
-const FRAME_PUNCH_A  = 6;
-const FRAME_PUNCH_B  = 7;
-const FRAME_PUNCH_C  = 8;
-const FRAME_PUNCH_D  = 9;
-const FRAME_KICK_A   = 10;
-const FRAME_KICK_B   = 11;
-const FRAME_KICK_C   = 12;
-const FRAME_KICK_D   = 13;
-const FRAME_SPEC_A   = 14;
-const FRAME_SPEC_B   = 15;
-const FRAME_SPEC_C   = 16;
-const FRAME_SPEC_D   = 17;
-const FRAME_HIT      = 18;
-const FRAME_BLOCK    = 19;
-const ATLAS_FRAMES   = 20;
-// Aliases for backwards compatibility
-const FRAME_PUNCH    = FRAME_PUNCH_A;
-const FRAME_KICK     = FRAME_KICK_A;
-const FRAME_SPECIAL  = FRAME_SPEC_A;
+// === ANIMATION FRAME CONSTANTS (32-frame atlas) ===
+// Sprite sheet layout — each frame is 64×64 px, strip is 2048×64 px (32 frames wide)
+//
+//  0        IDLE
+//  1-3      WALK  A/B/C
+//  4-5      RUN   A/B
+//  6-7      JUMP  rise / air
+//  8        DUCK
+//  9        BLOCK
+//  10-12    PUNCH A/B/C
+//  13-15    KICK  A/B/C
+//  16-17    JUMP KICK A/B
+//  18-19    DUCK PUNCH A/B
+//  20-23    SPECIAL A/B/C/D
+//  24       HIT (Take Damage)
+//  25-26    TAUNT / WIN
+//  27-29    DIE A/B/C
+//  30-31    (reserved)
+const FRAME_IDLE      = 0;
+const FRAME_WALK_A    = 1;
+const FRAME_WALK_B    = 2;
+const FRAME_WALK_C    = 3;
+const FRAME_RUN_A     = 4;
+const FRAME_RUN_B     = 5;
+const FRAME_JUMP_A    = 6;
+const FRAME_JUMP_B    = 7;
+const FRAME_DUCK      = 8;
+const FRAME_BLOCK     = 9;
+const FRAME_PUNCH_A   = 10;
+const FRAME_PUNCH_B   = 11;
+const FRAME_PUNCH_C   = 12;
+const FRAME_KICK_A    = 13;
+const FRAME_KICK_B    = 14;
+const FRAME_KICK_C    = 15;
+const FRAME_JKICK_A   = 16;
+const FRAME_JKICK_B   = 17;
+const FRAME_DPUNCH_A  = 18;
+const FRAME_DPUNCH_B  = 19;
+const FRAME_SPEC_A    = 20;
+const FRAME_SPEC_B    = 21;
+const FRAME_SPEC_C    = 22;
+const FRAME_SPEC_D    = 23;
+const FRAME_HIT       = 24;
+const FRAME_TAUNT_A   = 25;
+const FRAME_TAUNT_B   = 26;
+const FRAME_DIE_A     = 27;
+const FRAME_DIE_B     = 28;
+const FRAME_DIE_C     = 29;
+const ATLAS_FRAMES    = 32;
+// Aliases
+const FRAME_PUNCH     = FRAME_PUNCH_A;
+const FRAME_KICK      = FRAME_KICK_A;
+const FRAME_SPECIAL   = FRAME_SPEC_A;
 
 let p1Char = 'polo';
 let p2Char = 'beanie';
@@ -2096,8 +2126,8 @@ function phaserCreate() {
     scene.physics.add.existing(rect1);
     player1State = {
         body: rect1, health: CHAR_DEFS[p1Char].hp, maxHealth: CHAR_DEFS[p1Char].hp,
-        super: 20, combo: 0, state:'idle', facing:1, attackTimer:0, isBlocking:false, hitstun:0,
-        charKey: p1Char
+        super: 20, combo: 0, state:'idle', facing:1, attackTimer:0, isBlocking:false,
+        isDucking:false, hitstun:0, dieTimer:0, charKey: p1Char
     };
     player1State.body.body.setCollideWorldBounds(true);
 
@@ -2105,8 +2135,8 @@ function phaserCreate() {
     scene.physics.add.existing(rect2);
     player2State = {
         body: rect2, health: CHAR_DEFS[p2Char].hp, maxHealth: CHAR_DEFS[p2Char].hp,
-        super: 20, combo: 0, state:'idle', facing:-1, attackTimer:0, isBlocking:false, hitstun:0,
-        charKey: p2Char
+        super: 20, combo: 0, state:'idle', facing:-1, attackTimer:0, isBlocking:false,
+        isDucking:false, hitstun:0, dieTimer:0, charKey: p2Char
     };
     player2State.body.body.setCollideWorldBounds(true);
 
@@ -2285,11 +2315,24 @@ function phaserUpdate(time, delta) {
             player1State._wasAirborne = false;
             spawnDustVFX((player1State.body.x - 400) * 0.012, groundLevelY);
         }
+        const p1Airborne = !player1State.body.body.touching.down;
         if (isDown(scene.keys.S) || window.touchInputs.down) {
-            player1State.isBlocking = true; player1State.state='block'; p1VelX=0;
+            if (p1Airborne) {
+                // Fast-fall while airborne — no duck state
+            } else {
+                player1State.isDucking = true;
+                player1State.isBlocking = true;
+                player1State.state = 'ducking';
+                p1VelX = 0;
+            }
+        } else {
+            player1State.isDucking = false;
         }
     }
-    if (player1State.state==='punching' || player1State.state==='kicking' || player1State.state==='special') {
+    const p1Airborne = !player1State.body.body.touching.down;
+    if (player1State.state==='punching' || player1State.state==='kicking' ||
+        player1State.state==='special' || player1State.state==='jump_kicking' ||
+        player1State.state==='duck_punching') {
         player1State.body.body.setVelocityX(0);
     } else if (player1State.hitstun <= 0) {
         player1State.body.body.setVelocityX(p1VelX);
@@ -2297,16 +2340,20 @@ function phaserUpdate(time, delta) {
 
     if (player1State.hitstun <= 0 && player1State.attackTimer <= 0) {
         if (Phaser.Input.Keyboard.JustDown(scene.keys.J) || window.touchInputs.punch) {
-            triggerAttack('p1','punch'); window.touchInputs.punch=false;
+            if (player1State.isDucking) triggerAttack('p1','duck_punch');
+            else                        triggerAttack('p1','punch');
+            window.touchInputs.punch = false;
         } else if (Phaser.Input.Keyboard.JustDown(scene.keys.K) || window.touchInputs.kick) {
-            triggerAttack('p1','kick'); window.touchInputs.kick=false;
+            if (p1Airborne) triggerAttack('p1','jump_kick');
+            else            triggerAttack('p1','kick');
+            window.touchInputs.kick = false;
         } else if (Phaser.Input.Keyboard.JustDown(scene.keys.L) || window.touchInputs.special) {
             if (player1State.super >= 50) {
                 triggerAttack('p1','special');
                 player1State.super -= 50;
                 updateHPUI();
             }
-            window.touchInputs.special=false;
+            window.touchInputs.special = false;
         }
     }
 
@@ -2354,35 +2401,41 @@ function triggerAttack(attacker, type) {
     const opponent = attacker==='p1' ? player2State : player1State;
     if (!state || !opponent) return;
 
-    state.state = type==='punch' ? 'punching' : (type==='kick' ? 'kicking' : 'special');
-    const atkDur = type==='special' ? 0.6 : (type==='kick' ? 0.4 : 0.35);
+    const stateMap = { punch:'punching', kick:'kicking', special:'special',
+                       jump_kick:'jump_kicking', duck_punch:'duck_punching' };
+    state.state = stateMap[type] || 'punching';
+    const atkDur = type==='special' ? 0.6 : (type==='kick'||type==='jump_kick' ? 0.4 : 0.35);
     state.attackTimer = atkDur;
     state.attackDuration = atkDur;
-    audio.playHit(type==='special' ? 'special' : 'punch');
+    audio.playHit(type==='special' ? 'special' : (type==='kick'||type==='jump_kick' ? 'kick' : 'punch'));
 
     const dmgMod = CHAR_DEFS[state.charKey].dmg;
-    const reach = type==='special' ? 140 : (type==='kick' ? 105 : 85);
+    const reach = type==='special' ? 140 : (type==='kick'||type==='jump_kick' ? 115 : (type==='duck_punch' ? 90 : 85));
     const dist = Math.abs(state.body.x - opponent.body.x);
-    const inYRange = Math.abs(state.body.y - opponent.body.y) < 100;
+    const inYRange = Math.abs(state.body.y - opponent.body.y) < (type==='jump_kick' ? 160 : 100);
 
     if (dist < reach && inYRange) {
-        const blockActive = opponent.isBlocking && (
+        const blockActive = opponent.isBlocking && !opponent.isDucking && (
             (state.body.x < opponent.body.x && opponent.facing === -1) ||
             (state.body.x > opponent.body.x && opponent.facing === 1)
         );
-        if (blockActive) {
+        // Duck punch hits ducking opponents; jump kick hits standing opponents from above
+        const duckBlocks = type === 'duck_punch' && opponent.isDucking;
+        if (blockActive && !duckBlocks) {
             audio.playHit('punch');
             opponent.body.body.setVelocityX(state.facing * 100);
         } else {
-            audio.playHit(type==='kick' ? 'kick' : 'punch');
-            const baseDmg = type==='special' ? 25 : (type==='kick' ? 12 : 7);
+            audio.playHit(type==='kick'||type==='jump_kick' ? 'kick' : 'punch');
+            const baseDmg = type==='special' ? 25 : (type==='kick' ? 12 : type==='jump_kick' ? 15 : type==='duck_punch' ? 10 : 7);
             const dmg = Math.round(baseDmg * dmgMod);
             opponent.health = Math.max(0, opponent.health - dmg);
-            state.super = Math.min(100, state.super + (type==='punch' ? 8 : 15));
+            state.super = Math.min(100, state.super + (type==='punch'||type==='duck_punch' ? 8 : 15));
 
-            opponent.body.body.setVelocityX(state.facing * (type==='special' ? 650 : 350));
-            opponent.body.body.setVelocityY(type==='special' ? -250 : -100);
-            opponent.hitstun = type==='special' ? 0.5 : 0.25;
+            const knockX = type==='special' ? 650 : (type==='jump_kick' ? 500 : 350);
+            const knockY = type==='special' ? -250 : (type==='jump_kick' ? -300 : -100);
+            opponent.body.body.setVelocityX(state.facing * knockX);
+            opponent.body.body.setVelocityY(knockY);
+            opponent.hitstun = type==='special' ? 0.5 : (type==='jump_kick' ? 0.4 : 0.25);
             opponent.state = 'hit';
 
             triggerCameraShake();
@@ -2498,33 +2551,49 @@ function updateSpriteFrame(mesh, state, t) {
     const anim = (window.devConfig && window.devConfig.actionAnimMap) || {};
     const getF = (key, fallback) => (anim[key] && anim[key].length) ? anim[key] : fallback;
     const cycle = (frames, spd) => frames[Math.floor(t * spd) % frames.length];
+    const progress = (frames, p) => frames[Math.min(Math.floor(p * frames.length), frames.length - 1)];
 
     let frame;
-    if (state.hitstun > 0) {
+    const airborne = state.body && state.body.body && !state.body.body.touching.down;
+
+    if (state.state === 'dying') {
+        const f = getF('die', [FRAME_DIE_A, FRAME_DIE_B, FRAME_DIE_C]);
+        frame = f[Math.min(Math.floor(state.dieTimer * 6), f.length - 1)];
+    } else if (state.state === 'taunt' || state.state === 'win') {
+        frame = cycle(getF('taunt', [FRAME_TAUNT_A, FRAME_TAUNT_B]), 4);
+    } else if (state.hitstun > 0) {
         const hf = getF('hit', [FRAME_HIT]);
         frame = (Math.floor(state.hitstun * 20) % 2 === 0) ? hf[0] : FRAME_IDLE;
     } else if (state.isBlocking) {
         frame = getF('block', [FRAME_BLOCK])[0];
+    } else if (state.isDucking) {
+        frame = getF('duck', [FRAME_DUCK])[0];
     } else if (state.attackTimer > 0) {
         const p = 1.0 - (state.attackTimer / state.attackDuration);
-        if (state.state === 'punching') {
-            const f = getF('punch', [FRAME_PUNCH_A,FRAME_PUNCH_B,FRAME_PUNCH_C,FRAME_PUNCH_D]);
-            frame = f[Math.min(Math.floor(p * f.length), f.length-1)];
+        if (state.state === 'jump_kicking') {
+            const f = getF('jump_kick', [FRAME_JKICK_A, FRAME_JKICK_B]);
+            frame = progress(f, p);
+        } else if (state.state === 'duck_punching') {
+            const f = getF('duck_punch', [FRAME_DPUNCH_A, FRAME_DPUNCH_B]);
+            frame = progress(f, p);
+        } else if (state.state === 'punching') {
+            frame = progress(getF('punch', [FRAME_PUNCH_A, FRAME_PUNCH_B, FRAME_PUNCH_C]), p);
         } else if (state.state === 'kicking') {
-            const f = getF('kick', [FRAME_KICK_A,FRAME_KICK_B,FRAME_KICK_C,FRAME_KICK_D]);
-            frame = f[Math.min(Math.floor(p * f.length), f.length-1)];
+            frame = progress(getF('kick', [FRAME_KICK_A, FRAME_KICK_B, FRAME_KICK_C]), p);
         } else {
-            const f = getF('special', [FRAME_SPEC_A,FRAME_SPEC_B,FRAME_SPEC_C,FRAME_SPEC_D]);
-            frame = f[Math.min(Math.floor(p * f.length), f.length-1)];
+            frame = progress(getF('special', [FRAME_SPEC_A, FRAME_SPEC_B, FRAME_SPEC_C, FRAME_SPEC_D]), p);
         }
     } else if (state.dashTimer > 0) {
-        frame = cycle(getF('dash', [FRAME_RUN_A,FRAME_RUN_B,FRAME_RUN_A]), 18);
-    } else if (state.body && state.body.body && !state.body.body.touching.down) {
-        frame = cycle(getF('jump', [FRAME_RUN_A,FRAME_RUN_B]), 8);
+        frame = cycle(getF('dash', [FRAME_RUN_A, FRAME_RUN_B, FRAME_RUN_A]), 18);
+    } else if (airborne) {
+        const f = getF('jump', [FRAME_JUMP_A, FRAME_JUMP_B]);
+        // Show rise frame going up, air frame coming down
+        const vy = state.body.body.velocity.y;
+        frame = vy < 0 ? f[0] : f[Math.min(1, f.length - 1)];
     } else if (state.state === 'running') {
-        frame = cycle(getF('run', [FRAME_RUN_A,FRAME_RUN_B,FRAME_RUN_A]), 14);
+        frame = cycle(getF('run', [FRAME_RUN_A, FRAME_RUN_B, FRAME_RUN_A]), 14);
     } else if (state.state === 'walking') {
-        frame = cycle(getF('walk', [FRAME_WALK_A,FRAME_WALK_B,FRAME_WALK_C]), 9);
+        frame = cycle(getF('walk', [FRAME_WALK_A, FRAME_WALK_B, FRAME_WALK_C]), 9);
     } else {
         frame = getF('idle', [FRAME_IDLE])[0];
     }
