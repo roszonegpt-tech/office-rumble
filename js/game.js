@@ -51,22 +51,22 @@ const VFX_SMOKE_ATLAS = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAswAAALFC
 // =================== DEV CONFIG ===================
 window.devConfig = {
     actionAnimMap: {
-        idle:       [0],
-        walk:       [1,2,3,2],
-        run:        [4,5],
-        jump:       [6,7],
-        duck:       [8],
-        block:      [9],
-        punch:      [10,11,12,13],
-        kick:       [14,15,16,17],
-        jump_kick:  [18,19],
-        duck_punch: [20,21],
-        special:    [22,23,24,25],
-        hit:        [26],
-        taunt:      [27,28],
-        win:        [27,28],
-        die:        [29,30,31],
-        dash:       [4,5],
+        idle:       [0,1,2,3,4,5],
+        walk:       [6,7,8,9,10,11],
+        run:        [12,13,14,15,16,17],
+        jump:       [18,19,20,21,22,23],
+        duck:       [24,25,26,27,28,29],
+        block:      [30,31,32,33,34,35],
+        punch:      [36,37,38,39,40,41],
+        kick:       [42,43,44,45,46,47],
+        jump_kick:  [48,49,50,51,52,53],
+        duck_punch: [54,55,56,57,58,59],
+        special:    [60,61,62,63,64,65],
+        hit:        [66,67,68,69,70,71],
+        taunt:      [72,73,74,75,76,77],
+        win:        [72,73,74,75,76,77],
+        die:        [78,79,80,81,82,83],
+        dash:       [12,13,14,15,16,17],
     },
     inputBindings: {
         moveLeft:  { key:'A',   touch:'left'    },
@@ -93,43 +93,43 @@ const CHAR_DEFS = {
 };
 
 // === ANIMATION FRAME CONSTANTS ===
-// 32-frame sheet layout (6144×240 px, 192px per frame):
-//  0=IDLE  1-3=WALK  4-5=RUN  6-7=JUMP  8=DUCK  9=BLOCK
-//  10-13=PUNCH  14-17=KICK  18-19=JUMP_KICK  20-21=DUCK_PUNCH
-//  22-25=SPECIAL  26=HIT  27-28=TAUNT/WIN  29-31=DIE
+// 84-frame sheet layout (16128×240 px, 192px per frame, 6 frames per action):
+//  0-5=IDLE  6-11=WALK  12-17=RUN  18-23=JUMP  24-29=DUCK  30-35=BLOCK
+//  36-41=PUNCH  42-47=KICK  48-53=JKICK  54-59=DPUNCH  60-65=SPECIAL
+//  66-71=HIT  72-77=TAUNT  78-83=DIE
 const FRAME_IDLE      = 0;
-const FRAME_WALK_A    = 1;
-const FRAME_WALK_B    = 2;
-const FRAME_WALK_C    = 3;
-const FRAME_RUN_A     = 4;
-const FRAME_RUN_B     = 5;
-const FRAME_JUMP_A    = 6;
-const FRAME_JUMP_B    = 7;
-const FRAME_DUCK      = 8;
-const FRAME_BLOCK     = 9;
-const FRAME_PUNCH_A   = 10;
-const FRAME_PUNCH_B   = 11;
-const FRAME_PUNCH_C   = 12;
-const FRAME_PUNCH_D   = 13;
-const FRAME_KICK_A    = 14;
-const FRAME_KICK_B    = 15;
-const FRAME_KICK_C    = 16;
-const FRAME_KICK_D    = 17;
-const FRAME_JKICK_A   = 18;
-const FRAME_JKICK_B   = 19;
-const FRAME_DPUNCH_A  = 20;
-const FRAME_DPUNCH_B  = 21;
-const FRAME_SPEC_A    = 22;
-const FRAME_SPEC_B    = 23;
-const FRAME_SPEC_C    = 24;
-const FRAME_SPEC_D    = 25;
-const FRAME_HIT       = 26;
-const FRAME_TAUNT_A   = 27;
-const FRAME_TAUNT_B   = 28;
-const FRAME_DIE_A     = 29;
-const FRAME_DIE_B     = 30;
-const FRAME_DIE_C     = 31;
-const ATLAS_FRAMES    = 32;
+const FRAME_WALK_A    = 6;
+const FRAME_WALK_B    = 7;
+const FRAME_WALK_C    = 8;
+const FRAME_RUN_A     = 12;
+const FRAME_RUN_B     = 13;
+const FRAME_JUMP_A    = 18;
+const FRAME_JUMP_B    = 19;
+const FRAME_DUCK      = 24;
+const FRAME_BLOCK     = 30;
+const FRAME_PUNCH_A   = 36;
+const FRAME_PUNCH_B   = 37;
+const FRAME_PUNCH_C   = 38;
+const FRAME_PUNCH_D   = 39;
+const FRAME_KICK_A    = 42;
+const FRAME_KICK_B    = 43;
+const FRAME_KICK_C    = 44;
+const FRAME_KICK_D    = 45;
+const FRAME_JKICK_A   = 48;
+const FRAME_JKICK_B   = 49;
+const FRAME_DPUNCH_A  = 54;
+const FRAME_DPUNCH_B  = 55;
+const FRAME_SPEC_A    = 60;
+const FRAME_SPEC_B    = 61;
+const FRAME_SPEC_C    = 62;
+const FRAME_SPEC_D    = 63;
+const FRAME_HIT       = 66;
+const FRAME_TAUNT_A   = 72;
+const FRAME_TAUNT_B   = 73;
+const FRAME_DIE_A     = 78;
+const FRAME_DIE_B     = 79;
+const FRAME_DIE_C     = 80;
+const ATLAS_FRAMES    = 84;
 // Aliases
 const FRAME_PUNCH     = FRAME_PUNCH_A;
 const FRAME_KICK      = FRAME_KICK_A;
@@ -2876,22 +2876,16 @@ const DEV_ACTIONS = [
     { key:'dash',       label:'Dash',         icon:'⚡' },
 ];
 
-// Frame names for the 32-frame atlas (one entry per atlas frame).
-const DEV_FRAME_NAMES = [
-    'IDLE',
-    'WALK_A','WALK_B','WALK_C',
-    'RUN_A','RUN_B',
-    'JUMP_A','JUMP_B',
-    'DUCK','BLOCK',
-    'PUNCH_A','PUNCH_B','PUNCH_C','PUNCH_D',
-    'KICK_A','KICK_B','KICK_C','KICK_D',
-    'JKICK_A','JKICK_B',
-    'DPUNCH_A','DPUNCH_B',
-    'SPEC_A','SPEC_B','SPEC_C','SPEC_D',
-    'HIT',
-    'TAUNT_A','TAUNT_B',
-    'DIE_A','DIE_B','DIE_C',
-];
+// Frame names for the 84-frame atlas (6 frames per action).
+const DEV_FRAME_NAMES = (function(){
+    const n=[];
+    [['IDLE',6],['WALK',6],['RUN',6],['JUMP',6],['DUCK',6],['BLOCK',6],
+     ['PUNCH',6],['KICK',6],['JKICK',6],['DPUNCH',6],['SPEC',6],
+     ['HIT',6],['TAUNT',6],['DIE',6]].forEach(([a,c])=>{
+        for(let i=0;i<c;i++) n.push(a+'_'+i);
+    });
+    return n;
+})();
 
 const DEV_INPUT_DEFS = [
     { key:'moveLeft',  label:'Move Left',   defKey:'A', defTouch:'left'    },
