@@ -57,15 +57,15 @@ window.devConfig = {
         jump:       [18,19,20,21,22,23],
         duck:       [24,25,26,27,28,29],
         block:      [30,31,32,33,34,35],
-        punch:      [36,37,38,39,40,41],
-        kick:       [42,43,44,45,46,47],
-        jump_kick:  [48,49,50,51,52,53],
-        duck_punch: [54,55,56,57,58,59],
-        special:    [60,61,62,63,64,65],
-        hit:        [66,67,68,69,70,71],
-        taunt:      [72,73,74,75,76,77],
-        win:        [72,73,74,75,76,77],
-        die:        [78,79,80,81,82,83],
+        punch:      [36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53],
+        kick:       [54,55,56,57,58,59],
+        jump_kick:  [60,61,62,63,64,65,66,67,68,69,70,71],
+        duck_punch: [72,73,74,75,76,77],
+        special:    [78,79,80,81,82,83],
+        hit:        [84,85,86,87,88,89],
+        taunt:      [90,91,92,93,94,95,96,97,98,99,100,101,102,103,104],
+        win:        [90,91,92,93,94,95,96,97,98,99,100,101,102,103,104],
+        die:        [105,106,107,108,109,110],
         dash:       [12,13,14,15,16,17],
     },
     inputBindings: {
@@ -93,10 +93,19 @@ const CHAR_DEFS = {
 };
 
 // === ANIMATION FRAME CONSTANTS ===
-// 84-frame sheet layout (16128×240 px, 192px per frame, 6 frames per action):
-//  0-5=IDLE  6-11=WALK  12-17=RUN  18-23=JUMP  24-29=DUCK  30-35=BLOCK
-//  36-41=PUNCH  42-47=KICK  48-53=JKICK  54-59=DPUNCH  60-65=SPECIAL
-//  66-71=HIT  72-77=TAUNT  78-83=DIE
+// 2-row atlas: 84 frames per row × 2 rows = 168 slots (111 used).
+//   Layout (frame index → action):
+//   Row 0:
+//     0-5   IDLE      6-11  WALK      12-17 RUN       18-23 JUMP
+//     24-29 DUCK      30-35 BLOCK     36-41 PUNCH_1   42-47 PUNCH_2
+//     48-53 PUNCH_3   54-59 KICK      60-65 JKICK_1   66-71 JKICK_2
+//     72-77 DPUNCH    78-83 SPEC
+//   Row 1:
+//     84-89  HIT      90-95   TAUNT (flex/point)   96-104 TAUNT2 (stance/sit, 9 frames)
+//     105-110 DIE
+const FRAMES_PER_ROW  = 84;
+const ATLAS_ROWS      = 2;
+const ATLAS_FRAMES    = FRAMES_PER_ROW * ATLAS_ROWS;  // 168 slots
 const FRAME_IDLE      = 0;
 const FRAME_WALK_A    = 6;
 const FRAME_WALK_B    = 7;
@@ -111,25 +120,24 @@ const FRAME_PUNCH_A   = 36;
 const FRAME_PUNCH_B   = 37;
 const FRAME_PUNCH_C   = 38;
 const FRAME_PUNCH_D   = 39;
-const FRAME_KICK_A    = 42;
-const FRAME_KICK_B    = 43;
-const FRAME_KICK_C    = 44;
-const FRAME_KICK_D    = 45;
-const FRAME_JKICK_A   = 48;
-const FRAME_JKICK_B   = 49;
-const FRAME_DPUNCH_A  = 54;
-const FRAME_DPUNCH_B  = 55;
-const FRAME_SPEC_A    = 60;
-const FRAME_SPEC_B    = 61;
-const FRAME_SPEC_C    = 62;
-const FRAME_SPEC_D    = 63;
-const FRAME_HIT       = 66;
-const FRAME_TAUNT_A   = 72;
-const FRAME_TAUNT_B   = 73;
-const FRAME_DIE_A     = 78;
-const FRAME_DIE_B     = 79;
-const FRAME_DIE_C     = 80;
-const ATLAS_FRAMES    = 84;
+const FRAME_KICK_A    = 54;
+const FRAME_KICK_B    = 55;
+const FRAME_KICK_C    = 56;
+const FRAME_KICK_D    = 57;
+const FRAME_JKICK_A   = 60;
+const FRAME_JKICK_B   = 61;
+const FRAME_DPUNCH_A  = 72;
+const FRAME_DPUNCH_B  = 73;
+const FRAME_SPEC_A    = 78;
+const FRAME_SPEC_B    = 79;
+const FRAME_SPEC_C    = 80;
+const FRAME_SPEC_D    = 81;
+const FRAME_HIT       = 84;
+const FRAME_TAUNT_A   = 90;
+const FRAME_TAUNT_B   = 91;
+const FRAME_DIE_A     = 105;
+const FRAME_DIE_B     = 106;
+const FRAME_DIE_C     = 107;
 // Aliases
 const FRAME_PUNCH     = FRAME_PUNCH_A;
 const FRAME_KICK      = FRAME_KICK_A;
@@ -313,13 +321,14 @@ function drawCharPortrait(canvas, atlasKey, frameIdx) {
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        const fw = img.width / ATLAS_FRAMES;
-        const fh = img.height;
-        // Draw frame fitted into canvas
+        const fw = img.width / FRAMES_PER_ROW;
+        const fh = img.height / ATLAS_ROWS;
+        const col = frameIdx % FRAMES_PER_ROW;
+        const row = Math.floor(frameIdx / FRAMES_PER_ROW);
         const scale = Math.min(canvas.width/fw, canvas.height/fh);
         const dw = fw * scale, dh = fh * scale;
         const dx = (canvas.width-dw)/2, dy = (canvas.height-dh);
-        ctx.drawImage(img, frameIdx*fw, 0, fw, fh, dx, dy, dw, dh);
+        ctx.drawImage(img, col*fw, row*fh, fw, fh, dx, dy, dw, dh);
     };
     img.src = src;
 }
@@ -1880,9 +1889,9 @@ function makeSpriteCharacter(charKey, xPos) {
     const dataURL = window.__SPRITE_ATLASES[def.atlas];
     const loader = new THREE.TextureLoader();
     const tex = loader.load(dataURL, (loadedTex) => {
-        // Once loaded, set proper repeat and offset
-        loadedTex.repeat.set(1/ATLAS_FRAMES, 1);
-        loadedTex.offset.set(0, 0);
+        // Initial view: first frame (top-left). Real per-frame UV happens in setMeshFrame.
+        loadedTex.repeat.set(1/FRAMES_PER_ROW, 1/ATLAS_ROWS);
+        loadedTex.offset.set(0, 1 - 1/ATLAS_ROWS);
         loadedTex.needsUpdate = true;
     });
     tex.magFilter = THREE.NearestFilter;
@@ -1894,8 +1903,8 @@ function makeSpriteCharacter(charKey, xPos) {
     else if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
 
     // Set initial frame
-    tex.repeat.set(1/ATLAS_FRAMES, 1);
-    tex.offset.set(0, 0);
+    tex.repeat.set(1/FRAMES_PER_ROW, 1/ATLAS_ROWS);
+    tex.offset.set(0, 1 - 1/ATLAS_ROWS);
 
     const mat = new THREE.MeshBasicMaterial({
         map: tex,
@@ -1927,12 +1936,19 @@ function setMeshFrame(mesh, frameIdx, facing) {
     if (facing === undefined) facing = ud.facing;
     ud.facing = facing;
 
-    // Inset by 1px from each edge to prevent UV bleeding between atlas frames.
-    // Use actual image width when available, fall back to 192px-per-frame estimate.
-    const texW = (ud.atlasTex.image && ud.atlasTex.image.width) ? ud.atlasTex.image.width : (ATLAS_FRAMES * 192);
-    const inset = 1.0 / texW;
-    ud.atlasTex.repeat.x = (1 / ATLAS_FRAMES) - 2 * inset;
-    ud.atlasTex.offset.x = (frameIdx / ATLAS_FRAMES) + inset;
+    // 2D atlas (FRAMES_PER_ROW × ATLAS_ROWS). Inset 1px per edge to avoid bleeding.
+    const texW = (ud.atlasTex.image && ud.atlasTex.image.width)  ? ud.atlasTex.image.width  : (FRAMES_PER_ROW * 192);
+    const texH = (ud.atlasTex.image && ud.atlasTex.image.height) ? ud.atlasTex.image.height : (ATLAS_ROWS * 240);
+    const insetX = 1.0 / texW;
+    const insetY = 1.0 / texH;
+    const col = frameIdx % FRAMES_PER_ROW;
+    const row = Math.floor(frameIdx / FRAMES_PER_ROW);
+    ud.atlasTex.repeat.x  = (1 / FRAMES_PER_ROW) - 2 * insetX;
+    ud.atlasTex.repeat.y  = (1 / ATLAS_ROWS)     - 2 * insetY;
+    ud.atlasTex.offset.x  = (col / FRAMES_PER_ROW) + insetX;
+    // Three.js textures have flipY=true by default: V=1 is top of image.
+    // Row 0 (top of source) → offset.y = 1 - 1/ATLAS_ROWS
+    ud.atlasTex.offset.y  = 1 - ((row + 1) / ATLAS_ROWS) + insetY;
     ud.atlasTex.needsUpdate = true;
 
     // Flip the mesh horizontally instead of the UV
@@ -2876,14 +2892,31 @@ const DEV_ACTIONS = [
     { key:'dash',       label:'Dash',         icon:'⚡' },
 ];
 
-// Frame names for the 84-frame atlas (6 frames per action).
+// Frame names for the 2-row 168-slot atlas (matches build_c3 layout, 111 used).
 const DEV_FRAME_NAMES = (function(){
-    const n=[];
-    [['IDLE',6],['WALK',6],['RUN',6],['JUMP',6],['DUCK',6],['BLOCK',6],
-     ['PUNCH',6],['KICK',6],['JKICK',6],['DPUNCH',6],['SPEC',6],
-     ['HIT',6],['TAUNT',6],['DIE',6]].forEach(([a,c])=>{
-        for(let i=0;i<c;i++) n.push(a+'_'+i);
-    });
+    const n = new Array(168).fill('');
+    const groups = [
+        // [start, label, count]
+        [0,   'IDLE',    6],
+        [6,   'WALK',    6],
+        [12,  'RUN',     6],
+        [18,  'JUMP',    6],
+        [24,  'DUCK',    6],
+        [30,  'BLOCK',   6],
+        [36,  'PUNCH1',  6],
+        [42,  'PUNCH2',  6],
+        [48,  'PUNCH3',  6],
+        [54,  'KICK',    6],
+        [60,  'JKICK1',  6],
+        [66,  'JKICK2',  6],
+        [72,  'DPUNCH',  6],
+        [78,  'SPEC',    6],
+        [84,  'HIT',     6],
+        [90,  'TAUNT',   6],
+        [96,  'STANCE',  9],
+        [105, 'DIE',     6],
+    ];
+    groups.forEach(([s,lbl,c]) => { for (let i=0;i<c;i++) n[s+i] = lbl+'_'+i; });
     return n;
 })();
 
@@ -3074,10 +3107,13 @@ function _devDrawFrameToCanvas(canvas, atlasKey, frameIdx) {
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const fw = img.width / ATLAS_FRAMES;
-        const scale = Math.min(canvas.width / fw, canvas.height / img.height);
-        const dw = fw * scale, dh = img.height * scale;
-        ctx.drawImage(img, frameIdx * fw, 0, fw, img.height, (canvas.width-dw)/2, canvas.height-dh, dw, dh);
+        const fw = img.width / FRAMES_PER_ROW;
+        const fh = img.height / ATLAS_ROWS;
+        const col = frameIdx % FRAMES_PER_ROW;
+        const row = Math.floor(frameIdx / FRAMES_PER_ROW);
+        const scale = Math.min(canvas.width / fw, canvas.height / fh);
+        const dw = fw * scale, dh = fh * scale;
+        ctx.drawImage(img, col * fw, row * fh, fw, fh, (canvas.width-dw)/2, canvas.height-dh, dw, dh);
     };
     let img = _devAtlasCache[atlasKey];
     if (img && img.complete && img.naturalWidth) { draw(img); return; }
@@ -3112,10 +3148,13 @@ function _devStartPreview() {
                 ctx.fillStyle = (((tx/8)+(ty/8))%2===0) ? '#181820' : '#111118';
                 ctx.fillRect(tx, ty, 8, 8);
             }
-            const fw = image.width / ATLAS_FRAMES;
-            const scale = Math.min(cnv.width / fw, (cnv.height-10) / image.height) * 0.92;
-            const dw = fw*scale, dh = image.height*scale;
-            ctx.drawImage(image, frameIdx*fw, 0, fw, image.height, (cnv.width-dw)/2, cnv.height-dh-10, dw, dh);
+            const fw = image.width / FRAMES_PER_ROW;
+            const fh = image.height / ATLAS_ROWS;
+            const col = frameIdx % FRAMES_PER_ROW;
+            const row = Math.floor(frameIdx / FRAMES_PER_ROW);
+            const scale = Math.min(cnv.width / fw, (cnv.height-10) / fh) * 0.92;
+            const dw = fw*scale, dh = fh*scale;
+            ctx.drawImage(image, col*fw, row*fh, fw, fh, (cnv.width-dw)/2, cnv.height-dh-10, dw, dh);
             ctx.fillStyle = 'rgba(0,0,0,0.75)';
             ctx.fillRect(0, cnv.height-10, cnv.width, 10);
             ctx.fillStyle = '#ff0055';
