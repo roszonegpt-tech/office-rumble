@@ -52,21 +52,21 @@ const VFX_SMOKE_ATLAS = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAswAAALFC
 window.devConfig = {
     actionAnimMap: {
         idle:       [0],
-        walk:       [1,2,3],
-        run:        [4,5,4],
-        jump:       [4,5],       // placeholder: RUN_A/B until 32-frame sheet
-        duck:       [19],        // placeholder: BLOCK until 32-frame sheet
-        block:      [19],
-        punch:      [6,7,8],
-        kick:       [10,11,12],
-        jump_kick:  [12,13],     // placeholder: KICK_C/D until 32-frame sheet
-        duck_punch: [7,8],       // placeholder: PUNCH_B/C until 32-frame sheet
-        special:    [14,15,16,17],
-        hit:        [18],
-        taunt:      [0,1,0],     // placeholder: IDLE/WALK_A until 32-frame sheet
-        win:        [0,1,0],     // placeholder: IDLE/WALK_A until 32-frame sheet
-        die:        [18,19,18],  // placeholder: HIT/BLOCK until 32-frame sheet
-        dash:       [4,5,4],
+        walk:       [1,2,3,2],
+        run:        [4,5],
+        jump:       [6,7],
+        duck:       [8],
+        block:      [9],
+        punch:      [10,11,12,13],
+        kick:       [14,15,16,17],
+        jump_kick:  [18,19],
+        duck_punch: [20,21],
+        special:    [22,23,24,25],
+        hit:        [26],
+        taunt:      [27,28],
+        win:        [27,28],
+        die:        [29,30,31],
+        dash:       [4,5],
     },
     inputBindings: {
         moveLeft:  { key:'A',   touch:'left'    },
@@ -93,44 +93,43 @@ const CHAR_DEFS = {
 };
 
 // === ANIMATION FRAME CONSTANTS ===
-// Current sprites are 20-frame sheets. New actions below fall back to
-// the closest existing frame until a 32-frame sheet is uploaded.
-//
-// 20-frame sheet layout (1280×64 px, 64px per frame):
-//  0=IDLE  1-3=WALK  4-5=RUN  6-9=PUNCH  10-13=KICK  14-17=SPECIAL  18=HIT  19=BLOCK
+// 32-frame sheet layout (6144×240 px, 192px per frame):
+//  0=IDLE  1-3=WALK  4-5=RUN  6-7=JUMP  8=DUCK  9=BLOCK
+//  10-13=PUNCH  14-17=KICK  18-19=JUMP_KICK  20-21=DUCK_PUNCH
+//  22-25=SPECIAL  26=HIT  27-28=TAUNT/WIN  29-31=DIE
 const FRAME_IDLE      = 0;
 const FRAME_WALK_A    = 1;
 const FRAME_WALK_B    = 2;
 const FRAME_WALK_C    = 3;
 const FRAME_RUN_A     = 4;
 const FRAME_RUN_B     = 5;
-const FRAME_JUMP_A    = 4;   // placeholder → RUN_A until 32-frame sheet uploaded
-const FRAME_JUMP_B    = 5;   // placeholder → RUN_B
-const FRAME_DUCK      = 19;  // placeholder → BLOCK
-const FRAME_BLOCK     = 19;
-const FRAME_PUNCH_A   = 6;
-const FRAME_PUNCH_B   = 7;
-const FRAME_PUNCH_C   = 8;
-const FRAME_PUNCH_D   = 9;   // legacy
-const FRAME_KICK_A    = 10;
-const FRAME_KICK_B    = 11;
-const FRAME_KICK_C    = 12;
-const FRAME_KICK_D    = 13;  // legacy
-const FRAME_JKICK_A   = 12;  // placeholder → KICK_C
-const FRAME_JKICK_B   = 13;  // placeholder → KICK_D
-const FRAME_DPUNCH_A  = 7;   // placeholder → PUNCH_B
-const FRAME_DPUNCH_B  = 8;   // placeholder → PUNCH_C
-const FRAME_SPEC_A    = 14;
-const FRAME_SPEC_B    = 15;
-const FRAME_SPEC_C    = 16;
-const FRAME_SPEC_D    = 17;
-const FRAME_HIT       = 18;
-const FRAME_TAUNT_A   = 0;   // placeholder → IDLE
-const FRAME_TAUNT_B   = 1;   // placeholder → WALK_A
-const FRAME_DIE_A     = 18;  // placeholder → HIT
-const FRAME_DIE_B     = 19;  // placeholder → BLOCK
-const FRAME_DIE_C     = 18;  // placeholder → HIT
-const ATLAS_FRAMES    = 20;  // update to 32 after uploading new sprite sheets
+const FRAME_JUMP_A    = 6;
+const FRAME_JUMP_B    = 7;
+const FRAME_DUCK      = 8;
+const FRAME_BLOCK     = 9;
+const FRAME_PUNCH_A   = 10;
+const FRAME_PUNCH_B   = 11;
+const FRAME_PUNCH_C   = 12;
+const FRAME_PUNCH_D   = 13;
+const FRAME_KICK_A    = 14;
+const FRAME_KICK_B    = 15;
+const FRAME_KICK_C    = 16;
+const FRAME_KICK_D    = 17;
+const FRAME_JKICK_A   = 18;
+const FRAME_JKICK_B   = 19;
+const FRAME_DPUNCH_A  = 20;
+const FRAME_DPUNCH_B  = 21;
+const FRAME_SPEC_A    = 22;
+const FRAME_SPEC_B    = 23;
+const FRAME_SPEC_C    = 24;
+const FRAME_SPEC_D    = 25;
+const FRAME_HIT       = 26;
+const FRAME_TAUNT_A   = 27;
+const FRAME_TAUNT_B   = 28;
+const FRAME_DIE_A     = 29;
+const FRAME_DIE_B     = 30;
+const FRAME_DIE_C     = 31;
+const ATLAS_FRAMES    = 32;
 // Aliases
 const FRAME_PUNCH     = FRAME_PUNCH_A;
 const FRAME_KICK      = FRAME_KICK_A;
@@ -1929,8 +1928,8 @@ function setMeshFrame(mesh, frameIdx, facing) {
     ud.facing = facing;
 
     // Inset by 1px from each edge to prevent UV bleeding between atlas frames.
-    // Use actual image width when available, fall back to 64px-per-frame estimate.
-    const texW = (ud.atlasTex.image && ud.atlasTex.image.width) ? ud.atlasTex.image.width : (ATLAS_FRAMES * 64);
+    // Use actual image width when available, fall back to 192px-per-frame estimate.
+    const texW = (ud.atlasTex.image && ud.atlasTex.image.width) ? ud.atlasTex.image.width : (ATLAS_FRAMES * 192);
     const inset = 1.0 / texW;
     ud.atlasTex.repeat.x = (1 / ATLAS_FRAMES) - 2 * inset;
     ud.atlasTex.offset.x = (frameIdx / ATLAS_FRAMES) + inset;
@@ -2877,16 +2876,21 @@ const DEV_ACTIONS = [
     { key:'dash',       label:'Dash',         icon:'⚡' },
 ];
 
-// Frame names for the current 20-frame atlas.
-// After uploading 32-frame sheets, expand this list to 32 entries.
+// Frame names for the 32-frame atlas (one entry per atlas frame).
 const DEV_FRAME_NAMES = [
     'IDLE',
     'WALK_A','WALK_B','WALK_C',
     'RUN_A','RUN_B',
+    'JUMP_A','JUMP_B',
+    'DUCK','BLOCK',
     'PUNCH_A','PUNCH_B','PUNCH_C','PUNCH_D',
     'KICK_A','KICK_B','KICK_C','KICK_D',
+    'JKICK_A','JKICK_B',
+    'DPUNCH_A','DPUNCH_B',
     'SPEC_A','SPEC_B','SPEC_C','SPEC_D',
-    'HIT','BLOCK',
+    'HIT',
+    'TAUNT_A','TAUNT_B',
+    'DIE_A','DIE_B','DIE_C',
 ];
 
 const DEV_INPUT_DEFS = [
