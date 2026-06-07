@@ -1914,7 +1914,7 @@ function makeSpriteCharacter(charKey, xPos) {
         depthWrite: false
     });
 
-    const W = 2.2, H = 3.3;  // Larger billboard for higher-res character appearance
+    const W = 2.2, H = 2.75;  // Matches atlas frame aspect ratio (192x240px)
     const geom = new THREE.PlaneGeometry(W, H);
     const mesh = new THREE.Mesh(geom, mat);
     mesh.position.set(xPos, groundLevelY + H/2, 0);
@@ -3033,6 +3033,7 @@ function _devBuildFrameGrid() {
     const atlasKey = CHAR_DEFS[charKey]?.atlas;
 
     for (let f = 0; f < ATLAS_FRAMES; f++) {
+        if (!DEV_FRAME_NAMES[f]) continue;
         const isSelected = _devTempFrames.includes(f);
         const cell = document.createElement('div');
         cell.className = 'dev-frame-cell' + (isSelected ? ' selected' : '');
