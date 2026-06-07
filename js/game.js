@@ -624,23 +624,45 @@ function buildCafeStage() {
     buildParkingSection(52, gly, M);
 
     // ============================================================
-    // BREAKABLE PROPS (placed across all sections)
+    // BREAKABLE PROPS — CAFE (cx ~0)
     // ============================================================
     createPotPlant(-7.5, gly);
     createPastryCase(-4.0, gly);
     createEspressoMachine(-0.5, gly);
     createChalkboardMenu(3.5, gly);
     createPlateStack(7.0, gly);
+    createPotPlant(1.5, gly);
+    createCafeStool(-6.0, gly);
+    createCafeStool(5.5, gly);
+    createCafeStool(9.5, gly);
+    createCoffeeUrn(10.5, gly);
+    createCakeTier(-2.5, gly);
 
-    // Office breakables (offset by +26)
+    // ============================================================
+    // BREAKABLE PROPS — OFFICE (cx ~26)
+    // ============================================================
     createOfficeComputer(26 - 7.5, gly);
     createServerRack(26 - 4.0, gly);
     createOfficePlant(26 - 0.5, gly);
+    createOfficeComputer(26 + 2.0, gly);
+    createOfficePlant(26 + 5.5, gly);
+    createPrinter(26 - 6.0, gly);
+    createFileBox(26 + 4.0, gly);
+    createFileBox(26 - 2.5, gly);
+    createWaterCooler(26 + 7.0, gly);
 
-    // Parking breakables (offset by +52)
+    // ============================================================
+    // BREAKABLE PROPS — PARKING (cx ~52)
+    // ============================================================
     createCarHood(52 - 7, gly);
     createTrafficCone(52 - 4, gly);
     createGarbageCan(52 - 1, gly);
+    createTrafficCone(52 + 3, gly);
+    createGarbageCan(52 + 6, gly);
+    createOilDrum(52 - 5.5, gly);
+    createOilDrum(52 + 1.5, gly);
+    createPalletStack(52 + 5.0, gly);
+    createToolBox(52 - 2.5, gly);
 }
 
 // ============================================================
@@ -1650,6 +1672,182 @@ function createPlateStack(x, y) {
     });
 }
 
+// =================== EXTRA BREAKABLE PROPS ===================
+
+function createCafeStool(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y, -1.2);
+    const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.06,12), new THREE.MeshLambertMaterial({color:0xb08040}));
+    seat.position.y = 1.05; seat.name='seat'; g.add(seat);
+    for (let i=0;i<4;i++) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.0,6), new THREE.MeshLambertMaterial({color:0x8B6914}));
+        leg.position.set(Math.sin(i*Math.PI/2)*0.22, 0.5, Math.cos(i*Math.PI/2)*0.22);
+        g.add(leg);
+    }
+    threeScene.add(g);
+    breakables.push({ type:'stool', mesh:g, x, health:2, maxHealth:2, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y,-1.2); },
+        onBreak: ()=>{ audio.playBreak('box'); g.rotation.z=1.2; g.position.y=y-0.3;
+            for(let i=0;i<12;i++) spawn3DParticle(new THREE.Vector3(x,y+0.5,-1.2),
+                new THREE.Vector3((Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*2), 0xb08040, 0.055, 1.0); }
+    });
+}
+
+function createCoffeeUrn(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y, -1.5);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.18,0.7,10), new THREE.MeshLambertMaterial({color:0xd4d0c8}));
+    body.position.y=0.65; body.name='body'; g.add(body);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.21,10,6), new THREE.MeshLambertMaterial({color:0x111111}));
+    top.scale.y=0.4; top.position.y=1.05; g.add(top);
+    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.22,6), new THREE.MeshLambertMaterial({color:0x888888}));
+    spout.rotation.z=Math.PI/2; spout.position.set(0.25,0.5,-0.0); g.add(spout);
+    threeScene.add(g);
+    breakables.push({ type:'urn', mesh:g, x, health:2, maxHealth:2, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y,-1.5); },
+        onBreak: ()=>{ audio.playBreak('metal'); g.rotation.z=-0.9; g.position.y=y-0.2;
+            for(let i=0;i<20;i++) spawn3DParticle(new THREE.Vector3(x,y+0.8,-1.5),
+                new THREE.Vector3((Math.random()-0.5)*4,2.5+Math.random()*3.5,(Math.random()-0.5)*2),
+                Math.random()<0.5?0x5b3a1a:0xd4d0c8, 0.06, 1.2); }
+    });
+}
+
+function createCakeTier(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y+0.3, -1.5);
+    const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,0.22,12), new THREE.MeshLambertMaterial({color:0xfafafa}));
+    b1.position.y=0; g.add(b1);
+    const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,0.2,12), new THREE.MeshLambertMaterial({color:0xfff0e8}));
+    b2.position.y=0.21; g.add(b2);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8), new THREE.MeshLambertMaterial({color:0xff6688}));
+    top.position.y=0.38; g.add(top);
+    threeScene.add(g);
+    breakables.push({ type:'cake', mesh:g, x, health:1, maxHealth:1, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.scale.set(1,1,1); g.rotation.set(0,0,0); g.position.set(x,y+0.3,-1.5); },
+        onBreak: ()=>{ audio.playBreak('box'); g.scale.set(1.4,0.3,1.4); g.rotation.z=0.3;
+            for(let i=0;i<25;i++) spawn3DParticle(new THREE.Vector3(x,y+0.5,-1.5),
+                new THREE.Vector3((Math.random()-0.5)*5,2+Math.random()*4,(Math.random()-0.5)*2.5),
+                Math.random()<0.5?0xfafafa:0xffaacc, 0.07, 1.3); }
+    });
+}
+
+function createPrinter(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y+0.85, -1.6);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.35,0.65), new THREE.MeshLambertMaterial({color:0xf0ede8}));
+    body.name='body'; g.add(body);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.04,0.02), new THREE.MeshLambertMaterial({color:0x444444}));
+    slot.position.set(0,0.12,0.33); g.add(slot);
+    const light = new THREE.Mesh(new THREE.SphereGeometry(0.03,6,6), new THREE.MeshBasicMaterial({color:0x22c55e}));
+    light.name='light'; light.position.set(0.38,0.14,0.34); g.add(light);
+    threeScene.add(g);
+    breakables.push({ type:'printer', mesh:g, x, health:2, maxHealth:2, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y+0.85,-1.6); },
+        onBreak: ()=>{ audio.playBreak('box'); g.rotation.z=0.5; g.position.y=y+0.5;
+            for(let i=0;i<18;i++) spawn3DParticle(new THREE.Vector3(x,y+1.2,-1.6),
+                new THREE.Vector3((Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*2), 0xf0ede8, 0.055, 1.1);
+            for(let i=0;i<8;i++) spawn3DParticle(new THREE.Vector3(x,y+1.0,-1.6),
+                new THREE.Vector3((Math.random()-0.5)*6,0.5+Math.random()*2,(Math.random()-0.5)*2), 0xffffff, 0.035, 0.9); }
+    });
+}
+
+function createFileBox(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y+0.7, -1.5);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.55,0.38), new THREE.MeshLambertMaterial({color:0x3b82f6}));
+    box.name='box'; g.add(box);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.52,0.06,0.40), new THREE.MeshLambertMaterial({color:0x1d4ed8}));
+    lid.name='lid'; lid.position.y=0.3; g.add(lid);
+    const label = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.12,0.02), new THREE.MeshLambertMaterial({color:0xfafafa}));
+    label.position.set(0,0.05,0.2); g.add(label);
+    threeScene.add(g);
+    breakables.push({ type:'filebox', mesh:g, x, health:1, maxHealth:1, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y+0.7,-1.5); },
+        onBreak: ()=>{ audio.playBreak('box'); g.rotation.z=-0.8; lid.position.y=0.8; lid.rotation.z=0.6;
+            for(let i=0;i<20;i++) spawn3DParticle(new THREE.Vector3(x,y+1.1,-1.5),
+                new THREE.Vector3((Math.random()-0.5)*5,2+Math.random()*4,(Math.random()-0.5)*2),
+                Math.random()<0.5?0x3b82f6:0xffffff, 0.05, 1.0); }
+    });
+}
+
+function createWaterCooler(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y, -1.7);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.9,0.42), new THREE.MeshLambertMaterial({color:0xe8e8e8}));
+    base.position.y=0.45; g.add(base);
+    const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.75,10), new THREE.MeshBasicMaterial({color:0xc0e8ff, transparent:true, opacity:0.6}));
+    bottle.name='bottle'; bottle.position.y=1.28; g.add(bottle);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.12,8), new THREE.MeshLambertMaterial({color:0x2563eb}));
+    cap.position.y=1.73; g.add(cap);
+    threeScene.add(g);
+    breakables.push({ type:'cooler', mesh:g, x, health:2, maxHealth:2, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y,-1.7); bottle.visible=true; },
+        onBreak: ()=>{ audio.playBreak('glass'); bottle.visible=false; g.rotation.z=0.4;
+            for(let i=0;i<28;i++) spawn3DParticle(new THREE.Vector3(x,y+1.3,-1.7),
+                new THREE.Vector3((Math.random()-0.5)*4.5,2.5+Math.random()*4,(Math.random()-0.5)*2.5),
+                Math.random()<0.5?0xc0e8ff:0xffffff, 0.065, 1.3); }
+    });
+}
+
+function createOilDrum(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y, -1.5);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.9,12), new THREE.MeshLambertMaterial({color:0xb91c1c}));
+    drum.position.y=0.45; drum.name='drum'; g.add(drum);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.29,0.06,12), new THREE.MeshLambertMaterial({color:0x7f1d1d}));
+    top.position.y=0.93; g.add(top);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.295,0.295,0.06,12), new THREE.MeshLambertMaterial({color:0x1c1c1c}));
+    band.position.y=0.55; g.add(band);
+    threeScene.add(g);
+    breakables.push({ type:'drum', mesh:g, x, health:3, maxHealth:3, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y,-1.5); },
+        onBreak: ()=>{ audio.playBreak('metal'); g.rotation.z=1.0; g.position.y=y-0.1;
+            for(let i=0;i<25;i++) spawn3DParticle(new THREE.Vector3(x,y+0.7,-1.5),
+                new THREE.Vector3((Math.random()-0.5)*5,2+Math.random()*4,(Math.random()-0.5)*2.5),
+                Math.random()<0.4?0xff6600:0xb91c1c, 0.07, 1.4); }
+    });
+}
+
+function createPalletStack(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y, -1.6);
+    const mat = new THREE.MeshLambertMaterial({color:0xa06030});
+    for (let s=0; s<3; s++) {
+        const pallet = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.1,0.7), mat);
+        pallet.position.y = 0.05+s*0.28; pallet.name='pallet'+s; g.add(pallet);
+        for (let b=0;b<3;b++) {
+            const plank = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.08,0.1), new THREE.MeshLambertMaterial({color:0x8B5E3C}));
+            plank.position.set(0,0.12+s*0.28,-0.25+b*0.25); g.add(plank);
+        }
+    }
+    threeScene.add(g);
+    breakables.push({ type:'pallet', mesh:g, x, health:3, maxHealth:3, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y,-1.6); },
+        onBreak: ()=>{ audio.playBreak('box'); g.rotation.z=0.6; g.position.y=y-0.2;
+            for(let i=0;i<20;i++) spawn3DParticle(new THREE.Vector3(x,y+0.6,-1.6),
+                new THREE.Vector3((Math.random()-0.5)*5,2+Math.random()*3.5,(Math.random()-0.5)*2), 0xa06030, 0.065, 1.2); }
+    });
+}
+
+function createToolBox(x, y) {
+    const g = new THREE.Group();
+    g.position.set(x, y+0.4, -1.4);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.38,0.36), new THREE.MeshLambertMaterial({color:0xdc2626}));
+    box.name='box'; g.add(box);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.72,0.12,0.38), new THREE.MeshLambertMaterial({color:0xb91c1c}));
+    lid.name='lid'; lid.position.y=0.25; g.add(lid);
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1,0.02,6,12), new THREE.MeshLambertMaterial({color:0x888888}));
+    handle.rotation.x=Math.PI/2; handle.position.y=0.36; g.add(handle);
+    threeScene.add(g);
+    breakables.push({ type:'toolbox', mesh:g, x, health:2, maxHealth:2, broken:false,
+        reset(){ this.health=this.maxHealth; this.broken=false; g.rotation.set(0,0,0); g.position.set(x,y+0.4,-1.4); lid.rotation.set(0,0,0); },
+        onBreak: ()=>{ audio.playBreak('metal'); lid.rotation.z=1.1; lid.position.y=0.65;
+            for(let i=0;i<18;i++) spawn3DParticle(new THREE.Vector3(x,y+0.7,-1.4),
+                new THREE.Vector3((Math.random()-0.5)*4,2+Math.random()*3.5,(Math.random()-0.5)*2),
+                Math.random()<0.5?0xdc2626:0x888888, 0.06, 1.1); }
+    });
+}
+
 // =================== SPRITE CHARACTERS ===================
 function buildSpriteCharacters() {
     p1Mesh = makeSpriteCharacter(p1Char, -2.5);
@@ -2498,6 +2696,9 @@ function endMatch(timedOut = false) {
 }
 
 function restartMatch() {
+    const ps = document.getElementById('pause-screen');
+    if (ps) ps.classList.add('hidden');
+    gamePaused = false;
     const sc = document.getElementById('game-over-screen');
     if (sc) sc.classList.add('scale-0','opacity-0');
     if (p1Mesh && p2Mesh) {
@@ -2527,6 +2728,9 @@ function restartMatch() {
 }
 
 function exitToLobby() {
+    const ps = document.getElementById('pause-screen');
+    if (ps) ps.classList.add('hidden');
+    gamePaused = false;
     const sc = document.getElementById('game-over-screen');
     if (sc) sc.classList.add('scale-0','opacity-0');
     // Tear down Phaser & Three to allow re-init with new chars
@@ -2563,19 +2767,23 @@ function animate() {
     update3DParticles(dt);
     updateVFXSprites(dt);
 
-    // Side-scrolling camera: smoothly follow midpoint of fighters
+    // Side-scrolling camera: maintain strict side-profile view,
+    // tracking midpoint and zooming out as fighters spread apart
     if (threeCamera && player1State && player2State && p1Mesh && p2Mesh) {
         const midX = (p1Mesh.position.x + p2Mesh.position.x) * 0.5;
         const spread = Math.abs(p1Mesh.position.x - p2Mesh.position.x);
-        // Zoom out when fighters are far apart
-        const targetZ = Math.max(8, Math.min(16, 8 + spread * 1.2));
+        // targetZ: close when fighters touch (~3 units), far when across stage (~12 units)
+        const targetZ = Math.max(7, Math.min(20, 6 + spread * 1.8));
+        // Raise camera slightly when far apart so both bodies stay in frame
+        const targetY = Math.max(1.0, Math.min(2.2, 0.8 + spread * 0.12));
         window._camTargetX = window._camTargetX || 0;
         window._camTargetZ = window._camTargetZ || 10;
-        window._camTargetX += (midX - window._camTargetX) * 0.07;
+        window._camTargetY = window._camTargetY || 1.2;
+        window._camTargetX += (midX - window._camTargetX) * 0.08;
         window._camTargetZ += (targetZ - window._camTargetZ) * 0.05;
-        threeCamera.position.x = window._camTargetX;
-        threeCamera.position.z = window._camTargetZ;
-        threeCamera.lookAt(window._camTargetX, 1.0, 0);
+        window._camTargetY += (targetY - window._camTargetY) * 0.04;
+        threeCamera.position.set(window._camTargetX, window._camTargetY, window._camTargetZ);
+        threeCamera.lookAt(window._camTargetX, 0.9, 0);
 
         // Update zone indicator based on camera X position
         const zoneEl = document.getElementById('zone-indicator');
