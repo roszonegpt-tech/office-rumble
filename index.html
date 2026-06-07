@@ -1,1 +1,294 @@
-PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+CiAgICA8bWV0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Office Rumble: Cafe Brawl</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-1 md:p-4">
+
+<div class="relative w-full max-w-5xl h-[96vh] landscape:h-auto landscape:aspect-[16/9] md:h-auto md:aspect-[16/9] bg-[#101115] border-4 border-[#ff0055] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(255,0,85,0.4)] flex flex-col justify-between">
+
+    <div id="game-monitor" class="relative w-full aspect-[16/9] bg-[#06070a] overflow-hidden flex-shrink-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.9)]">
+        <div class="scanlines"></div>
+        <div class="crt-glow"></div>
+        <div id="three-container" class="absolute inset-0 z-0"></div>
+        <div id="phaser-container" class="absolute inset-0 z-20 pointer-events-none"></div>
+
+        <div id="landscape-touch-overlay" class="absolute inset-0 z-30 pointer-events-none hidden landscape:flex justify-between items-end p-4">
+            <div class="flex pointer-events-auto items-center p-2 bg-black/10 rounded-full backdrop-blur-[2px]">
+                <div id="float-joystick" class="joystick-base w-24 h-24">
+                    <div id="float-joystick-thumb" class="joystick-thumb w-10 h-10"></div>
+                </div>
+            </div>
+            <div class="flex gap-2.5 pointer-events-auto">
+                <button id="float-punch" class="action-btn w-12 h-12 rounded-full bg-[#ff0055] text-white border-2 border-white/20 flex items-center justify-center shadow-lg"><span class="pixel-font text-[8px] font-bold">P</span></button>
+                <button id="float-kick" class="action-btn w-12 h-12 rounded-full bg-[#7f00ff] text-white border-2 border-white/20 flex items-center justify-center shadow-lg"><span class="pixel-font text-[8px] font-bold">K</span></button>
+                <button id="float-special" class="action-btn w-12 h-12 rounded-full bg-amber-500 text-white border-2 border-white/20 flex items-center justify-center shadow-lg"><span class="pixel-font text-[8px] font-bold">S</span></button>
+            </div>
+            <div id="dev-extra-btns-landscape" class="flex gap-2.5 pointer-events-auto"></div>
+        </div>
+
+        <div class="absolute top-0 left-0 right-0 p-3 flex justify-between items-start z-30 pointer-events-none">
+            <div class="flex flex-col w-[38%] gap-1">
+                <div class="flex items-center gap-2">
+                    <div id="p1-portrait" class="w-12 h-12 rounded-full border-2 border-rose-400 bg-rose-950 flex items-center justify-center overflow-hidden shrink-0 shadow-md ring-2 ring-rose-600/30"></div>
+                    <div class="flex flex-col w-full">
+                        <span id="p1-name" class="pixel-font text-[6px] md:text-[8px] text-rose-400 tracking-wider truncate max-w-[80px]">PLAYER 1</span>
+                        <div class="w-full h-3 bg-neutral-900 border border-neutral-700 rounded overflow-hidden relative">
+                            <div id="p1-hp-slow" class="absolute top-0 left-0 h-full bg-red-600 transition-all duration-500 w-full"></div>
+                            <div id="p1-hp" class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-500 to-green-400 transition-all duration-75 w-full"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 px-1">
+                    <span class="pixel-font text-[6px] text-yellow-400">SUPER</span>
+                    <div class="flex-1 h-1.5 bg-neutral-900 border border-neutral-800 rounded-full overflow-hidden">
+                        <div id="p1-super" class="h-full bg-yellow-400 w-[20%] transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center gap-1.5">
+                <div class="w-10 h-10 md:w-11 md:h-11 rounded bg-gradient-to-b from-amber-500 to-yellow-600 border-2 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.5)] flex items-center justify-center">
+                    <span id="game-timer" class="pixel-font text-xs md:text-sm text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">99</span>
+                </div>
+                <div id="zone-indicator" class="pixel-font text-[5px] text-amber-300 text-center opacity-80">&#9749; CAFE</div>
+                <button id="btn-pause" onclick="togglePause()" class="pointer-events-auto px-2 py-1 bg-amber-500 border border-amber-300 rounded font-bold pixel-font text-[6px] text-black active:scale-95 shadow shadow-amber-600/50">PAUSE</button>
+                <button onclick="openDevMenu()" class="pointer-events-auto px-2 py-1 bg-neutral-800 border border-neutral-600 rounded pixel-font text-[5px] text-neutral-300 active:scale-95 shadow hover:border-[#ff0055]">&#9881; DEV</button>
+            </div>
+
+            <div class="flex flex-col w-[38%] gap-1 items-end">
+                <div class="flex items-center gap-2 w-full justify-end">
+                    <div class="flex flex-col w-full items-end">
+                        <span id="p2-name" class="pixel-font text-[6px] md:text-[8px] text-cyan-400 tracking-wider truncate max-w-[80px]">PLAYER 2</span>
+                        <div class="w-full h-3 bg-neutral-900 border border-neutral-700 rounded overflow-hidden relative">
+                            <div id="p2-hp-slow" class="absolute top-0 right-0 h-full bg-red-600 transition-all duration-500 w-full"></div>
+                            <div id="p2-hp" class="absolute top-0 right-0 h-full bg-gradient-to-l from-cyan-400 to-sky-500 transition-all duration-75 w-full"></div>
+                        </div>
+                    </div>
+                    <div id="p2-portrait" class="w-12 h-12 rounded-full border-2 border-cyan-400 bg-cyan-950 flex items-center justify-center overflow-hidden shrink-0 shadow-md ring-2 ring-cyan-600/30"></div>
+                </div>
+                <div class="flex items-center gap-1.5 px-1 w-full justify-end">
+                    <div class="flex-1 max-w-[120px] h-1.5 bg-neutral-900 border border-neutral-800 rounded-full overflow-hidden">
+                        <div id="p2-super" class="h-full bg-sky-400 w-[40%] transition-all duration-300 ml-auto"></div>
+                    </div>
+                    <span class="pixel-font text-[6px] text-sky-400">COMBO</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+            <div id="center-message" class="scale-0 opacity-0 transform transition-all duration-500 flex flex-col items-center">
+                <h2 id="main-announcement" class="pixel-font text-xl md:text-3xl text-yellow-400 text-glow-gold uppercase italic tracking-wider">VS</h2>
+                <span id="sub-announcement" class="pixel-font text-[8px] md:text-[10px] text-white mt-2 tracking-widest">GET READY</span>
+            </div>
+            <div id="p1-combo-box" class="absolute left-6 top-16 transform translate-x-[-50px] opacity-0 transition-all duration-300 flex flex-col">
+                <span class="pixel-font text-sm text-yellow-400 italic text-glow-gold"><span id="p1-combo-count">0</span> HITS!</span>
+            </div>
+            <div id="p2-combo-box" class="absolute right-6 top-16 transform translate-x-[50px] opacity-0 transition-all duration-300 flex flex-col items-end">
+                <span class="pixel-font text-sm text-sky-400 italic"><span id="p2-combo-count">0</span> HITS!</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="control-panel" class="flex-1 bg-gradient-to-b from-[#14151b] to-[#08090c] border-t-4 border-[#ff0055]/40 p-4 flex flex-col justify-center items-center gap-3 select-none portrait:flex landscape:hidden md:hidden">
+        <div class="w-full flex justify-between items-center px-2 text-[7px] text-neutral-500 pixel-font tracking-widest">
+            <span>PORTRAIT DECK CONTROLS</span><span class="text-[#ff0055] animate-pulse">DRAG JOYSTICK TO MOVE</span>
+        </div>
+        <div class="w-full flex justify-between items-center flex-1 max-h-[160px] gap-2">
+            <div class="flex items-center justify-center px-4">
+                <div id="deck-joystick" class="joystick-base"><div id="deck-joystick-thumb" class="joystick-thumb"></div></div>
+            </div>
+            <div class="flex gap-3">
+                <button id="btn-punch" class="action-btn w-12 h-12 rounded-full bg-[#ff0055] text-white border-2 border-white/30 flex items-center justify-center shadow-lg shadow-[#ff0055]/30"><span class="pixel-font text-[8px] font-bold">P</span></button>
+                <button id="btn-kick" class="action-btn w-12 h-12 rounded-full bg-[#7f00ff] text-white border-2 border-white/30 flex items-center justify-center shadow-lg shadow-[#7f00ff]/30"><span class="pixel-font text-[8px] font-bold">K</span></button>
+                <button id="btn-special" class="action-btn w-12 h-12 rounded-full bg-amber-500 text-white border-2 border-white/30 flex items-center justify-center shadow-lg shadow-amber-500/30"><span class="pixel-font text-[8px] font-bold">S</span></button>
+                <div id="dev-extra-btns-portrait" class="flex gap-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lobby & Character Selection -->
+    <div id="lobby-screen" class="absolute inset-0 bg-neutral-950/98 flex flex-col items-center justify-start p-4 md:p-6 z-40 overflow-y-auto arcade-scrollbar transition-all duration-500">
+        <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#ff0055_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+        <div class="text-center z-10 flex flex-col items-center w-full max-w-2xl my-auto">
+            <div class="mb-4 relative text-center">
+                <span class="pixel-font text-[8px] text-rose-500 tracking-widest block mb-1">OFFICE BRAWL ARENA</span>
+                <h1 class="pixel-font text-2xl md:text-4xl text-white font-extrabold tracking-tight italic drop-shadow-[0_4px_0_#ff0055] leading-none">
+                    OFFICE<br><span class="text-yellow-400 text-glow-gold">RUMBLE</span>
+                </h1>
+                <div class="absolute -top-3 -right-6 px-1.5 py-0.5 bg-yellow-400 text-black pixel-font text-[5px] rounded transform rotate-12 animate-pulse">SPRITE EDITION</div>
+            </div>
+            <p class="text-[11px] text-neutral-400 mb-4 font-medium max-w-md">Shatter pastry cases, smash plant pots, demolish the espresso machine. Pummel your colleagues in the company cafe.</p>
+            <button onclick="openDevMenu()" class="mb-3 px-3 py-1 bg-neutral-800 border border-neutral-600 rounded pixel-font text-[6px] text-neutral-400 hover:border-[#ff0055] hover:text-neutral-200 transition">&#9881; DEV STUDIO &#8212; Configure Animations &amp; Controls</button>
+
+            <div class="w-full mb-4">
+                <span class="pixel-font text-[8px] text-amber-400 block mb-2 tracking-widest text-center">SELECT MAP</span>
+                <div id="map-grid" class="grid grid-cols-3 gap-2"></div>
+            </div>
+
+            <div class="w-full mb-4">
+                <span class="pixel-font text-[8px] text-rose-400 block mb-2 tracking-widest text-center">SELECT YOUR FIGHTER</span>
+                <div id="char-grid" class="grid grid-cols-5 gap-2"></div>
+                <div class="mt-2 text-center">
+                    <span class="pixel-font text-[7px] text-neutral-500">SELECTED: </span><span id="selected-name" class="pixel-font text-[9px] text-yellow-400">&#8212;</span>
+                    <div id="selected-desc" class="text-[9px] text-neutral-400 mt-1 h-4">&#8212;</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 w-full justify-center mb-4">
+                <button onclick="startGameMode('ai')" class="arcade-btn px-6 py-3 rounded font-bold pixel-font text-[9px] tracking-wider text-white flex-1">PLAYER VS AI</button>
+                <button onclick="startGameMode('pvp')" class="arcade-btn px-6 py-3 rounded font-bold pixel-font text-[9px] tracking-wider text-white flex-1 saturate-[0.8]">LOCAL 2-PLAYER</button>
+            </div>
+
+            <div class="w-full bg-neutral-900/60 p-3 rounded border border-neutral-800 text-left">
+                <span class="pixel-font text-[7px] text-neutral-400 block mb-2 text-center">CABINET MANUAL</span>
+                <div class="grid grid-cols-2 gap-3 text-[9px] text-neutral-400">
+                    <div><span class="text-rose-400 font-bold block mb-1">PLAYER 1 (WASD)</span>A/D: Move | W: Jump | S: Block<br>J: Punch | K: Kick | L: Super</div>
+                    <div><span class="text-cyan-400 font-bold block mb-1">PLAYER 2 (ARROWS)</span>&#8592; / &#8594;: Move | &#8593;: Jump | &#8595;: Block<br>1: Punch | 2: Kick | 3: Super</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 z-40 scale-0 opacity-0 transition-all duration-500">
+        <h2 id="winner-title" class="pixel-font text-xl md:text-3xl text-yellow-400 text-glow-gold uppercase animate-bounce">P1 WINS!</h2>
+        <span id="winner-sub" class="pixel-font text-[9px] tracking-widest text-white mt-4">CAFE DOMINANCE ESTABLISHED</span>
+        <div class="flex gap-4 mt-8">
+            <button onclick="restartMatch()" class="arcade-btn px-5 py-2.5 rounded font-bold pixel-font text-[8px] text-white">RETRY BRAWL</button>
+            <button onclick="exitToLobby()" class="bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-5 py-2.5 rounded font-bold pixel-font text-[8px] text-white transition">EXIT TO LOBBY</button>
+        </div>
+    </div>
+
+    <div id="pause-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center p-6 z-40 hidden">
+        <div class="p-8 bg-[#15161d] border-4 border-amber-500 rounded-2xl flex flex-col items-center max-w-sm w-full text-center shadow-[0_0_40px_rgba(245,158,11,0.3)]">
+            <h2 class="pixel-font text-2xl text-amber-400 text-glow-gold uppercase animate-pulse">GAME PAUSED</h2>
+            <span class="text-[9px] tracking-wider text-neutral-400 mt-2">BATTLE IS CURRENTLY HALTED</span>
+            <div class="flex flex-col gap-3 w-full mt-8">
+                <button onclick="togglePause()" class="arcade-btn w-full py-3 rounded font-bold pixel-font text-[8px] text-white">RESUME FIGHT</button>
+                <button onclick="restartMatch();togglePause();" class="bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 py-3 rounded font-bold pixel-font text-[8px] text-white transition">RESTART BRAWL</button>
+                <button onclick="exitToLobby();togglePause();" class="bg-red-950/80 hover:bg-red-900 border border-red-800 py-3 rounded font-bold pixel-font text-[8px] text-white transition">QUIT TO LOBBY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DEV MENU OVERLAY ===== -->
+    <div id="dev-menu" class="absolute inset-0 bg-black/96 flex flex-col z-50 hidden" style="backdrop-filter:blur(2px)">
+        <!-- Header / Tab Bar -->
+        <div class="flex items-center gap-2 px-3 py-2 bg-[#0a0b0f] border-b-2 border-[#ff0055]/60 shrink-0 flex-wrap">
+            <span class="pixel-font text-[9px] text-[#ff0055] mr-2">&#9881; DEV STUDIO</span>
+            <button onclick="devSwitchTab('anims')" id="dev-tab-anims" class="dev-tab dev-tab-active">ANIMATIONS</button>
+            <button onclick="devSwitchTab('inputs')" id="dev-tab-inputs" class="dev-tab">INPUTS</button>
+            <button onclick="devSwitchTab('special')" id="dev-tab-special" class="dev-tab">SPECIAL MOVES</button>
+            <button onclick="devSwitchTab('buttons')" id="dev-tab-buttons" class="dev-tab">BUTTONS</button>
+            <button onclick="closeDevMenu()" class="ml-auto pixel-font text-[7px] text-neutral-500 hover:text-white px-3 py-1 border border-neutral-700 rounded hover:border-neutral-500">&#10005; CLOSE</button>
+        </div>
+
+        <!-- ANIMATIONS TAB -->
+        <div id="dev-panel-anims" class="flex flex-1 overflow-hidden gap-0 min-h-0">
+            <!-- Character selector -->
+            <div class="flex flex-col gap-1 w-[88px] shrink-0 bg-[#0d0e14] border-r border-neutral-800 p-2 overflow-y-auto arcade-scrollbar">
+                <span class="pixel-font text-[5px] text-neutral-500 uppercase mb-1">Character</span>
+                <div id="dev-char-list" class="flex flex-col gap-1"></div>
+            </div>
+            <!-- Action selector -->
+            <div class="flex flex-col gap-1 w-[100px] shrink-0 bg-[#0d0e14] border-r border-neutral-800 p-2 overflow-y-auto arcade-scrollbar">
+                <span class="pixel-font text-[5px] text-neutral-500 uppercase mb-1">Action</span>
+                <div id="dev-action-list" class="flex flex-col gap-1"></div>
+            </div>
+            <!-- Frame picker + preview -->
+            <div class="flex flex-col flex-1 overflow-hidden p-2 gap-2 min-w-0">
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="pixel-font text-[5px] text-neutral-500 uppercase">Frames &#8212; click to toggle, drag to reorder</span>
+                    <span id="dev-action-label" class="pixel-font text-[7px] text-[#ff0055] ml-1"></span>
+                </div>
+                <!-- Frame grid -->
+                <div id="dev-frame-grid" class="grid gap-1 overflow-y-auto arcade-scrollbar flex-1" style="grid-template-columns:repeat(5,1fr);min-height:0"></div>
+                <!-- Preview + controls -->
+                <div class="flex items-start gap-3 shrink-0 bg-[#0a0b0f] rounded-lg p-2 border border-neutral-800">
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="pixel-font text-[5px] text-neutral-500">PREVIEW</span>
+                        <canvas id="dev-preview-canvas" width="80" height="96" class="border-2 border-[#ff0055]/60 rounded bg-neutral-950" style="image-rendering:pixelated;width:80px;height:96px"></canvas>
+                    </div>
+                    <div class="flex flex-col gap-2 flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="pixel-font text-[5px] text-neutral-500">SPEED</span>
+                            <input type="range" id="dev-speed-slider" min="1" max="30" value="8" class="flex-1 accent-rose-500 max-w-[120px]" oninput="devPreviewSpeed=+this.value;document.getElementById('dev-speed-val').innerText=this.value+'fps'">
+                            <span id="dev-speed-val" class="pixel-font text-[6px] text-white w-10">8fps</span>
+                        </div>
+                        <div>
+                            <span class="pixel-font text-[5px] text-neutral-500 block">SEQUENCE:</span>
+                            <div id="dev-seq-label" class="pixel-font text-[6px] text-yellow-400 mt-0.5 break-all">&#8212;</div>
+                        </div>
+                        <button id="dev-save-btn" onclick="devSaveActionFrames()" class="pixel-font text-[6px] bg-[#ff0055] text-white px-3 py-1 rounded hover:brightness-110 active:scale-95 self-start">SAVE FRAMES</button>
+                        <button onclick="devClearFrames()" class="pixel-font text-[5px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded hover:bg-neutral-700 self-start">CLEAR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INPUTS TAB -->
+        <div id="dev-panel-inputs" class="hidden flex-1 overflow-y-auto arcade-scrollbar p-3 flex flex-col gap-2">
+            <div class="flex items-center justify-between mb-1 shrink-0">
+                <span class="pixel-font text-[8px] text-[#ff0055]">P1 INPUT BINDINGS</span>
+                <button onclick="devResetInputs()" class="pixel-font text-[5px] bg-neutral-800 text-neutral-400 px-2 py-1 rounded hover:bg-neutral-700">RESET DEFAULTS</button>
+            </div>
+            <div id="dev-input-bindings" class="flex flex-col gap-2"></div>
+            <div class="pixel-font text-[5px] text-neutral-600 mt-2">Click a key button then press any key to remap. Touch input names: left, right, up, down, punch, kick, special</div>
+        </div>
+
+        <!-- SPECIAL MOVES TAB -->
+        <div id="dev-panel-special" class="hidden flex-1 overflow-y-auto arcade-scrollbar p-3 flex flex-col gap-2">
+            <div class="flex items-center justify-between mb-1 shrink-0">
+                <span class="pixel-font text-[8px] text-[#ff0055]">SPECIAL MOVES</span>
+                <button onclick="devAddSpecialMove()" class="pixel-font text-[6px] bg-[#ff0055] text-white px-2 py-1 rounded hover:brightness-110">+ ADD MOVE</button>
+            </div>
+            <div id="dev-specials-list" class="flex flex-col gap-2"></div>
+            <div class="pixel-font text-[5px] text-neutral-600 mt-2 leading-relaxed">
+                Sequence inputs: left, right, up, down, punch, kick, special &#8212; separate with + (e.g. right+right for dash)<br>
+                Window = time allowed between each input (seconds). Cooldown = delay before move can trigger again.
+            </div>
+        </div>
+
+        <!-- BUTTONS TAB -->
+        <div id="dev-panel-buttons" class="hidden flex-1 overflow-y-auto arcade-scrollbar p-3 flex flex-col gap-2">
+            <div class="flex items-center justify-between mb-1 shrink-0">
+                <span class="pixel-font text-[8px] text-[#ff0055]">TOUCH BUTTONS</span>
+                <button onclick="devAddButton()" class="pixel-font text-[6px] bg-[#ff0055] text-white px-2 py-1 rounded hover:brightness-110">+ ADD BUTTON</button>
+            </div>
+            <div class="pixel-font text-[5px] text-neutral-500 mb-1">Built-in buttons (always present):</div>
+            <div class="flex gap-2 mb-2">
+                <div class="flex items-center gap-2 bg-neutral-900 border border-neutral-700 rounded px-3 py-2">
+                    <div class="w-7 h-7 rounded-full bg-[#ff0055] flex items-center justify-center pixel-font text-[7px] text-white font-bold">P</div>
+                    <span class="pixel-font text-[5px] text-neutral-400">PUNCH</span>
+                </div>
+                <div class="flex items-center gap-2 bg-neutral-900 border border-neutral-700 rounded px-3 py-2">
+                    <div class="w-7 h-7 rounded-full bg-[#7f00ff] flex items-center justify-center pixel-font text-[7px] text-white font-bold">K</div>
+                    <span class="pixel-font text-[5px] text-neutral-400">KICK</span>
+                </div>
+                <div class="flex items-center gap-2 bg-neutral-900 border border-neutral-700 rounded px-3 py-2">
+                    <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center pixel-font text-[7px] text-white font-bold">S</div>
+                    <span class="pixel-font text-[5px] text-neutral-400">SPECIAL</span>
+                </div>
+            </div>
+            <div class="pixel-font text-[5px] text-neutral-500 mb-1">Extra buttons (appear on touch controls):</div>
+            <div id="dev-buttons-list" class="flex flex-col gap-2"></div>
+        </div>
+    </div>
+    <!-- ===== END DEV MENU ===== -->
+</div>
+
+<div class="mt-3 flex gap-3 text-neutral-500 pixel-font text-[7px] tracking-widest text-center">
+    <span>P1: WASD + JKL | P2: ARROWS + 123 | TOUCH SUPPORTED</span>
+</div>
+
+<script src="js/sprites.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
