@@ -3013,13 +3013,12 @@ function _devBuildFrameGrid() {
         cell.title = DEV_FRAME_NAMES[f] || ('Frame ' + f);
 
         const cnv = document.createElement('canvas');
-        cnv.width = 38; cnv.height = 46;
-        cnv.style.imageRendering = 'pixelated';
-        cnv.style.display = 'block';
+        cnv.width = 96; cnv.height = 120;
+        cnv.style.cssText = 'display:block;width:100%;height:auto;image-rendering:pixelated';
         cell.appendChild(cnv);
 
         const lbl = document.createElement('div');
-        lbl.style.cssText = 'font-family:"Press Start 2P",monospace;font-size:4px;color:#666;margin-top:1px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%';
+        lbl.style.cssText = 'font-family:"Press Start 2P",monospace;font-size:5px;color:#aaa;margin-top:2px;text-align:center;white-space:nowrap;overflow:hidden;max-width:100%;letter-spacing:-0.5px';
         lbl.innerText = DEV_FRAME_NAMES[f] || ('F'+f);
         cell.appendChild(lbl);
 
